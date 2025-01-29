@@ -1,0 +1,43 @@
+{
+  "project_info": {
+<<<<<<< HEAD
+    "project_number": "679092505849",
+    "project_id": "kinton-51eeb",
+    "storage_bucket": "kinton-51eeb.firebasestorage.app"
+=======
+    "project_number": "541205888594",
+    "project_id": "jihan-3868e",
+    "storage_bucket": "jihan-3868e.firebasestorage.app"
+>>>>>>> feab64ccd6c0af00c0425ba1973013fecec92867
+  },
+  "client": [
+    {
+      "client_info": {
+<<<<<<< HEAD
+        "mobilesdk_app_id": "1:679092505849:android:55c1a2a73f7d4cd228e628",
+=======
+        "mobilesdk_app_id": "1:541205888594:android:21e1b50965631c8fe6298b",
+>>>>>>> feab64ccd6c0af00c0425ba1973013fecec92867
+        "android_client_info": {
+          "package_name": "com.example.tablets"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+<<<<<<< HEAD
+          "current_key": "AIzaSyAreS1fn075OrvslJi9O-rPCjuZ14tnNA0"
+=======
+          "current_key": "AIzaSyADNg88z5yJtYh9ibaZrIGGn6wKwrVV3v8"
+>>>>>>> feab64ccd6c0af00c0425ba1973013fecec92867
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
