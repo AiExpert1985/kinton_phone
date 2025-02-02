@@ -169,7 +169,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return IconButton(
         onPressed: () async {
           _setLoading(true); // Set loading to true
-          await setCustomersProvider(ref);
+          // await setCustomersProvider(ref);
+          await setTranasctionsProvider(ref, loadFreshData: true); // load fresh copy of transations
           _setLoading(false); // Set loading to false after data is loaded
         },
         icon: const Icon(
