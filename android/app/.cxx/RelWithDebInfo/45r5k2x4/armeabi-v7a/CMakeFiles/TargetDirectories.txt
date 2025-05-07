@@ -1,2 +1,0 @@
-E:/kinton_phone/tablets/android/app/.cxx/RelWithDebInfo/45r5k2x4/armeabi-v7a/CMakeFiles/edit_cache.dir
-E:/kinton_phone/tablets/android/app/.cxx/RelWithDebInfo/45r5k2x4/armeabi-v7a/CMakeFiles/rebuild_cache.dir
