@@ -7,8 +7,14 @@ import 'package:tablets/src/features/transactions/controllers/transaction_db_cac
 double calculateProductStock(WidgetRef ref, String productDbRef) {
   final productDbCache = ref.read(productsDbCacheProvider.notifier);
   final targetProduct = productDbCache.getItemByDbRef(productDbRef);
+
+  // Handle null product
+  if (targetProduct == null) return 0;
+
+  // Handle null or missing initialQuantity with default value
   final initialStock = targetProduct['initialQuantity'];
-  double stock = initialStock.toDouble();
+  double stock = (initialStock ?? 0).toDouble();
+
   final transactionDbRef = ref.read(transactionDbCacheProvider.notifier);
   final transactions = transactionDbRef.data;
   for (var transaction in transactions) {
