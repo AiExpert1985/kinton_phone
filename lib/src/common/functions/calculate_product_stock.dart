@@ -22,7 +22,10 @@ double calculateProductStock(WidgetRef ref, String productDbRef) {
       continue;
     }
     for (var item in transaction['items'] ?? []) {
-      if (item['dbRef'] != productDbRef) continue;
+      // CRITICAL FIX: Use 'productDbRef' not 'dbRef' to match transaction items to products
+      // item['dbRef'] is the transaction item's unique ID
+      // item['productDbRef'] is the actual product reference
+      if (item['productDbRef'] != productDbRef) continue;
       if (transactionType == TransactionType.customerInvoice.name ||
           transactionType == TransactionType.vendorReturn.name ||
           transactionType == TransactionType.gifts.name ||
