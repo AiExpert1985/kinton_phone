@@ -9,6 +9,7 @@ import 'package:tablets/src/common/values/gaps.dart';
 import 'package:tablets/src/common/widgets/image_titled.dart';
 import 'package:tablets/src/common/widgets/main_frame.dart';
 import 'package:tablets/src/features/transactions/controllers/products_db_cache_provider.dart';
+import 'package:tablets/src/features/transactions/controllers/transaction_db_cache_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/form_data_container.dart';
 import 'package:tablets/src/features/transactions/model/item.dart';
 import 'package:tablets/src/features/transactions/model/product.dart';
@@ -28,6 +29,7 @@ class _ItemsGridState extends ConsumerState<ItemsGrid> {
   @override
   Widget build(BuildContext context) {
     ref.watch(productsDbCacheProvider); // to show products after being loaded from database
+    ref.watch(transactionDbCacheProvider); // to recalculate stock when transactions load
     final productDbCache = ref.read(productsDbCacheProvider.notifier);
     final formDataNotifier = ref.read(formDataContainerProvider.notifier);
     final sellingPriceType = formDataNotifier.data['sellingPriceType'];
