@@ -67,7 +67,7 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
   void _loadCustomerDebtData(String customerDbRef) {
     final customerScreenDataCache = _ref.read(customerScreenDataCacheProvider.notifier);
     try {
-      final debtData = customerScreenDataCache.getItemByProperty('customerDbRef', customerDbRef);
+      final debtData = customerScreenDataCache.getItemByProperty('dbRef', customerDbRef);
 
       if (mounted) {
         state = state.copyWith(
