@@ -72,7 +72,7 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
     print('DEBUG: Cache size: ${customerScreenDataCache.data.length}');
 
     try {
-      final debtData = customerScreenDataCache.getItemByProperty('dbRef', customerDbRef);
+      final debtData = customerScreenDataCache.getItemByProperty('customerDbRef', customerDbRef);
 
       print('DEBUG: Found debt data: $debtData');
 
@@ -93,7 +93,7 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
       }
     } catch (e) {
       print('DEBUG: Error loading debt data: $e');
-      print('DEBUG: Available dbRefs in cache: ${customerScreenDataCache.data.map((d) => d['dbRef']).toList()}');
+      print('DEBUG: Available customerDbRefs in cache: ${customerScreenDataCache.data.map((d) => d['customerDbRef']).toList()}');
 
       if (mounted) {
         state = state.copyWith(
