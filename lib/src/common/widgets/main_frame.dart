@@ -80,7 +80,7 @@ class MainFrame extends ConsumerWidget {
           case 0:
             if (GoRouter.of(context).state.path != '/home') {
               ref.read(dataLoadingController.notifier).loadCustomers();
-              ref.read(dataLoadingController.notifier).loadProductStocks();
+              ref.read(dataLoadingController.notifier).loadCustomerScreenData();
               GoRouter.of(context).pushNamed(AppRoute.home.name);
             }
             break;

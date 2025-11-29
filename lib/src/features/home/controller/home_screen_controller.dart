@@ -1,17 +1,19 @@
 // lib/src/features/home/controller/home_screen_controller.dart
-import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tablets/src/common/functions/debug_print.dart';
 import 'package:tablets/src/common/providers/data_loading_provider.dart';
-import 'package:tablets/src/common/values/constants.dart';
+import 'package:tablets/src/features/customers/controllers/customer_screen_data_cache_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/cart_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/customer_db_cache_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/form_data_container.dart';
-import 'package:tablets/src/features/transactions/controllers/selected_customer_transaction_stream_provider.dart';
-import 'package:tablets/src/features/transactions/model/transaction.dart';
 import 'package:tablets/src/common/functions/dialog_delete_confirmation.dart';
+// Commented out - no longer using transactions or transaction streams
+// import 'dart:async';
+// import 'package:tablets/src/common/functions/debug_print.dart';
+// import 'package:tablets/src/common/values/constants.dart';
+// import 'package:tablets/src/features/transactions/controllers/selected_customer_transaction_stream_provider.dart';
+// import 'package:tablets/src/features/transactions/model/transaction.dart';
 
 class HomeScreenState {
   final num? totalDebt;
@@ -58,117 +60,43 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
   HomeScreenNotifier(this._ref) : super(HomeScreenState()) {
     // Load salesman info on initialization
     _ref.read(dataLoadingController.notifier).loadSalesmanInfo();
-    // Start listening to transaction changes for the selected customer
-    _listenToSelectedCustomerTransactions();
   }
 
   final Ref _ref;
-  // No longer need _transactionsSubscription here as ref.listen handles lifecycle.
-  String? _currentProcessingCustomerDbRef;
 
-  void _listenToSelectedCustomerTransactions() {
-    _ref.listen<AsyncValue<List<Map<String, dynamic>>>>(selectedCustomerTransactionsStreamProvider,
-        (previous, next) {
-      // Optionally, manage a broader loading state if needed,
-      // but HomeScreenState.isLoadingDebt is more specific.
-      // _ref.read(dataLoadingController.notifier).startLoading();
+  void _loadCustomerDebtData(String customerDbRef) {
+    final customerScreenDataCache = _ref.read(customerScreenDataCacheProvider.notifier);
+    try {
+      final debtData = customerScreenDataCache.getItemByProperty('customerDbRef', customerDbRef);
 
-      next.when(
-        data: (transactionsMaps) {
-          final formData = _ref.read(formDataContainerProvider);
-          final customerDbRef = formData['nameDbRef'] as String?;
-
-          // Process only if the transactions are for the currently selected customer
-          if (customerDbRef != null &&
-              customerDbRef.isNotEmpty &&
-              customerDbRef == _currentProcessingCustomerDbRef) {
-            final customerDataMap =
-                _ref.read(customerDbCacheProvider.notifier).getItemByDbRef(customerDbRef);
-            if (customerDataMap.isNotEmpty) {
-              final paymentDurationLimit = customerDataMap['paymentDurationLimit'] as num? ?? 0;
-              final creditLimit = customerDataMap['creditLimit'] as num? ?? 0;
-              final initialCredit = customerDataMap['initialCredit']?.toDouble() ?? 0.0;
-
-              final debtInfo = _calculateDebtWithGivenTransactions(
-                  transactionsMaps, initialCredit, paymentDurationLimit);
-
-              if (mounted) {
-                state = state.copyWith(
-                  totalDebt: debtInfo['totalDebt'],
-                  dueDebt: debtInfo['dueDebt'],
-                  latestReceiptDate: debtInfo['lastReceiptDate'] ?? 'لا يوجد',
-                  latestInvoiceDate: debtInfo['latestInvoiceDate'] ?? 'لا يوجد',
-                  isLoadingDebt: false,
-                  clearDebtError: true, // Clear any previous error on new data
-                );
-                _validateCustomer(paymentDurationLimit, creditLimit);
-              }
-            } else {
-              if (mounted) {
-                state = state.copyWith(
-                    isLoadingDebt: false,
-                    debtError: "بيانات الزبون غير متوفرة",
-                    clearDebtError: false);
-              }
-            }
-          } else if (customerDbRef == null || customerDbRef.isEmpty) {
-            // No customer is selected, or selection cleared
-            if (mounted) {
-              state = HomeScreenState(); // Reset to initial, non-loading, no-error state
-            }
-          }
-          // _ref.read(dataLoadingController.notifier).stopLoading();
-        },
-        loading: () {
-          if (mounted) state = state.copyWith(isLoadingDebt: true, clearDebtError: true);
-        },
-        error: (err, stack) {
-          errorPrint("Error in selectedCustomerTransactionsStreamProvider listener: $err");
-          if (mounted) state = state.copyWith(isLoadingDebt: false, debtError: err.toString());
-          // _ref.read(dataLoadingController.notifier).stopLoading();
-        },
-      );
-    }, fireImmediately: true // Process current value immediately upon listen
+      if (mounted) {
+        state = state.copyWith(
+          totalDebt: debtData['totalDebt']?.toDouble() ?? 0.0,
+          dueDebt: debtData['dueDebt']?.toDouble() ?? 0.0,
+          latestReceiptDate: debtData['lastCustomerReceiptDate'] ?? 'لا يوجد',
+          latestInvoiceDate: debtData['lastCustomerInvoiceDate'] ?? 'لا يوجد',
+          isLoadingDebt: false,
+          clearDebtError: true,
         );
-  }
 
-  Map<String, dynamic> _calculateDebtWithGivenTransactions(
-      List<Map<String, dynamic>> customerTransactionsMaps,
-      double initialDebt,
-      num paymentDurationLimit) {
-    double currentTotalDebt = initialDebt;
-    List<Transaction> customerInvoices = [];
-    List<Transaction> customerReceipts = [];
-
-    for (var transactionMap in customerTransactionsMaps) {
-      final transactionType = transactionMap['transactionType'];
-      final totalAmount = transactionMap['totalAmount']?.toDouble() ?? 0.0;
-
-      if (transactionType == TransactionType.customerInvoice.name) {
-        currentTotalDebt += totalAmount;
-        customerInvoices.add(Transaction.fromMap(transactionMap));
-      } else if (transactionType == TransactionType.customerReceipt.name) {
-        currentTotalDebt -= totalAmount;
-        customerReceipts.add(Transaction.fromMap(transactionMap));
-      } else if (transactionType == TransactionType.customerReturn.name) {
-        currentTotalDebt -= totalAmount;
+        final customerDataMap = _ref.read(customerDbCacheProvider.notifier).getItemByDbRef(customerDbRef);
+        final paymentDurationLimit = customerDataMap['paymentDurationLimit'] as num? ?? 0;
+        final creditLimit = customerDataMap['creditLimit'] as num? ?? 0;
+        _validateCustomer(paymentDurationLimit, creditLimit);
+      }
+    } catch (e) {
+      if (mounted) {
+        state = state.copyWith(
+          isLoadingDebt: false,
+          debtError: "بيانات الدين غير متوفرة",
+        );
       }
     }
-
-    customerInvoices.sort((a, b) => b.date.compareTo(a.date));
-    customerReceipts.sort((a, b) => b.date.compareTo(a.date));
-
-    DateTime? latestReceiptDate = customerReceipts.isNotEmpty ? customerReceipts.first.date : null;
-    DateTime? latestInvoiceDate = customerInvoices.isNotEmpty ? customerInvoices.first.date : null;
-    double dueDebt = calculateDueDebt(customerInvoices, paymentDurationLimit, currentTotalDebt);
-
-    return {
-      'totalDebt': currentTotalDebt,
-      'dueDebt': dueDebt,
-      'lastReceiptDate': latestReceiptDate,
-      'latestInvoiceDate': latestInvoiceDate,
-    };
   }
+
+  // COMMENTED OUT: No longer needed - debt is pre-calculated in accountant app
+  // void _listenToSelectedCustomerTransactions() { ... }
+  // Map<String, dynamic> _calculateDebtWithGivenTransactions(...) { ... }
 
   void selectCustomer(WidgetRef ref, Map<String, dynamic> customer) {
     final formDataNotifier = _ref.read(formDataContainerProvider.notifier);
@@ -176,25 +104,15 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
     _ref.read(cartProvider.notifier).reset();
 
     final customerDbRef = customer['dbRef'] as String?;
-    _currentProcessingCustomerDbRef = customerDbRef;
 
     formDataNotifier.addProperty('name', customer['name']);
     formDataNotifier.addProperty('nameDbRef', customerDbRef);
     formDataNotifier.addProperty('sellingPriceType', customer['sellingPriceType']);
     formDataNotifier.addProperty('isEditable', true);
 
-    // Set initial loading state. Debt info will be updated by the stream listener.
-    // This change in formDataContainerProvider (nameDbRef) will trigger
-    // selectedCustomerTransactionsStreamProvider to update.
-    if (mounted) {
-      state = state.copyWith(
-          totalDebt: null,
-          dueDebt: null,
-          latestReceiptDate: null,
-          latestInvoiceDate: null,
-          isValidUser: true,
-          isLoadingDebt: true,
-          clearDebtError: true);
+    // Load debt data from pre-calculated cache
+    if (customerDbRef != null) {
+      _loadCustomerDebtData(customerDbRef);
     }
   }
 
@@ -212,7 +130,6 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
       // Check if a customer is truly selected
       formDataNotifier.reset();
       cartNotifier.reset();
-      _currentProcessingCustomerDbRef = null;
       if (mounted) state = HomeScreenState(); // Reset to initial state
       return true;
     }
@@ -226,7 +143,6 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
     if (confirmation == true) {
       formDataNotifier.reset();
       cartNotifier.reset();
-      _currentProcessingCustomerDbRef = null; // Clear the ref
       if (mounted) state = HomeScreenState(); // Reset to initial state
       return true;
     }
@@ -246,25 +162,11 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
     state = state.copyWith(isValidUser: isValid);
   }
 
-  double calculateDueDebt(List<Transaction> invoices, num paymentDurationLimit, double totalDebt) {
-    double dueDebtAmount = totalDebt; // Start with total debt
-    // Iterate through invoices. If an invoice is NOT YET past its payment duration,
-    // its amount is subtracted from the total debt to determine what's "currently due"
-    // (meaning, what portion of the debt is from older, unpaid invoices).
-    for (var invoice in invoices) {
-      if (dueDebtAmount <= 0) break; // No more debt to consider as due
+  // COMMENTED OUT: No longer needed - due debt is pre-calculated in accountant app
+  // double calculateDueDebt(List<Transaction> invoices, num paymentDurationLimit, double totalDebt) { ... }
 
-      if (DateTime.now().difference(invoice.date).inDays < paymentDurationLimit) {
-        // This invoice is still within its allowed payment period, so its amount is not "due" yet.
-        dueDebtAmount -= invoice.totalAmount;
-      }
-    }
-    return max(0.0, dueDebtAmount); // Due debt cannot be negative
-  }
-
-  // Removed initialize() as its primary task (loadSalesmanInfo) moved to constructor.
-  // Removed old _setCustomerDebtVariables and getCustomerDebtInfo as their logic is now
-  // part of the reactive flow with _listenToSelectedCustomerTransactions and _calculateDebtWithGivenTransactions.
+  // All debt calculations are now done in the accountant app and stored in customer_screen_data collection.
+  // This eliminates the need to load and process transactions on the phone.
 
   @override
   void dispose() {

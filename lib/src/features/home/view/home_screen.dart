@@ -35,9 +35,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final homeScreenState = ref.watch(homeScreenStateController);
-    // Watching transactionDbCacheProvider might be for other parts of the screen or legacy.
-    // If only used for debt calculation that's now reactive, this specific watch here might be less critical.
-    ref.watch(transactionDbCacheProvider);
+    // COMMENTED OUT: Transactions are no longer loaded - debt data comes from customer_screen_data
+    // ref.watch(transactionDbCacheProvider);
 
     return MainFrame(
       child: Column(
@@ -186,7 +185,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             GoRouter.of(context).pushNamed(routeName);
             if (routeName == AppRoute.items.name) {
               ref.read(dataLoadingController.notifier).loadProducts();
-              ref.read(dataLoadingController.notifier).loadProductStocks();
+              ref.read(dataLoadingController.notifier).loadProductScreenData();
             }
           }
         } else if (context.mounted) {

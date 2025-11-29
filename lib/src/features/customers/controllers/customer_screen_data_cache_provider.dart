@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tablets/src/common/classes/db_cache.dart';
 
-final productStockCacheProvider = StateNotifierProvider<DbCache, List<Map<String, dynamic>>>((ref) {
+final customerScreenDataCacheProvider = StateNotifierProvider<DbCache, List<Map<String, dynamic>>>((ref) {
   return DbCache();
 });

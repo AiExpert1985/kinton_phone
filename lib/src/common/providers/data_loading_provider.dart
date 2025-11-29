@@ -5,16 +5,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tablets/src/common/providers/last_access_provider.dart';
 import 'package:tablets/src/common/providers/salesman_info_provider.dart';
 import 'package:tablets/src/features/login/repository/accounts_repository.dart';
-import 'package:tablets/src/features/products/controllers/product_stock_cache_provider.dart';
-import 'package:tablets/src/features/products/repository/product_stock_repository_provider.dart';
+import 'package:tablets/src/features/customers/controllers/customer_screen_data_cache_provider.dart';
+import 'package:tablets/src/features/customers/repository/customer_screen_data_repository_provider.dart';
+import 'package:tablets/src/features/products/controllers/product_screen_data_cache_provider.dart';
+import 'package:tablets/src/features/products/repository/product_screen_data_repository_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/customer_db_cache_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/pending_transaction_db_cache_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/products_db_cache_provider.dart';
-import 'package:tablets/src/features/transactions/controllers/transaction_db_cache_provider.dart';
 import 'package:tablets/src/features/transactions/repository/customer_repository_provider.dart';
 import 'package:tablets/src/features/transactions/repository/pending_transaction_repository_provider.dart';
 import 'package:tablets/src/features/transactions/repository/products_repository_provider.dart';
-import 'package:tablets/src/features/transactions/repository/transactions_repository_provider.dart';
+// Commented out - transactions no longer loaded in bulk
+// import 'package:tablets/src/features/transactions/controllers/transaction_db_cache_provider.dart';
+// import 'package:tablets/src/features/transactions/repository/transactions_repository_provider.dart';
 
 // Create a provider for the LoadingNotifier
 
@@ -57,6 +60,15 @@ class LoadingNotifier extends StateNotifier<bool> {
     stopLoading();
   }
 
+  Future<void> loadCustomerScreenData() async {
+    final repository = _ref.read(customerScreenDataRepositoryProvider);
+    final cache = _ref.read(customerScreenDataCacheProvider.notifier);
+    startLoading();
+    final data = await repository.fetchItemListAsMaps();
+    cache.set(data);
+    stopLoading();
+  }
+
   Future<void> loadPendingTransactions() async {
     _ref.read(dataLoadingController.notifier).startLoading();
     final pendingTransactions =
@@ -83,9 +95,8 @@ class LoadingNotifier extends StateNotifier<bool> {
     }
   }
 
-// note that we don't store copy of products (unlike customers and transactions)
-// the reason is that customers are rarely changed, and transactions of customers for one saleman are
-// not changed during the day (because they are mostly changed by salesman visit)
+// Products are loaded lazily (only when user navigates to items screen)
+// This optimizes startup time - customers and customer_screen_data are loaded first
   Future<void> loadProducts() async {
     final productsRepository = _ref.read(productsRepositoryProvider);
     final productDbCache = _ref.read(productsDbCacheProvider.notifier);
@@ -95,21 +106,20 @@ class LoadingNotifier extends StateNotifier<bool> {
     stopLoading();
   }
 
-  Future<void> loadProductStocks() async {
-    final stockRepository = _ref.read(productStockRepositoryProvider);
-    final stockCache = _ref.read(productStockCacheProvider.notifier);
+  Future<void> loadProductScreenData() async {
+    final repository = _ref.read(productScreenDataRepositoryProvider);
+    final cache = _ref.read(productScreenDataCacheProvider.notifier);
     startLoading();
-    final stocks = await stockRepository.fetchItemListAsMaps();
-    stockCache.set(stocks);
+    final data = await repository.fetchItemListAsMaps();
+    cache.set(data);
     stopLoading();
   }
 
-// COMMENTED OUT: Transactions are now loaded on-demand per customer via selectedCustomerTransactionsStreamProvider
-// This reduces memory usage significantly as we don't load all 10,000+ transactions at once
-// we keep a copy of transaction data, because it is expensive in loading (about 1000 document)
-// which makes loading slow, and cost money in firebase, I update the cache once a day
-// loadingFreshData is used for refresh button, which salesman might need if the customer data where updated
-// during the day, because in our app, the data is only updated onces a day at the first app access
+// COMMENTED OUT: Transactions are no longer loaded in the phone app
+// All calculations are now done in the accountant app and stored in:
+// - customer_screen_data (debt info)
+// - product_screen_data (stock info)
+// This eliminates the need to load 10,000+ transactions, dramatically reducing memory usage
   // Future<void> loadTransactions({bool loadFreshData = false}) async {
   //   if (_ref.read(transactionDbCacheProvider).isEmpty ||
   //       _ref.read(lastAccessProvider.notifier).hasOneDayPassed() ||
