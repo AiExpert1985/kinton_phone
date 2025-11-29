@@ -66,8 +66,15 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
 
   void _loadCustomerDebtData(String customerDbRef) {
     final customerScreenDataCache = _ref.read(customerScreenDataCacheProvider.notifier);
+
+    // Debug: Check cache status
+    print('DEBUG: Loading debt data for customer: $customerDbRef');
+    print('DEBUG: Cache size: ${customerScreenDataCache.data.length}');
+
     try {
       final debtData = customerScreenDataCache.getItemByProperty('dbRef', customerDbRef);
+
+      print('DEBUG: Found debt data: $debtData');
 
       if (mounted) {
         state = state.copyWith(
@@ -85,6 +92,9 @@ class HomeScreenNotifier extends StateNotifier<HomeScreenState> {
         _validateCustomer(paymentDurationLimit, creditLimit);
       }
     } catch (e) {
+      print('DEBUG: Error loading debt data: $e');
+      print('DEBUG: Available dbRefs in cache: ${customerScreenDataCache.data.map((d) => d['dbRef']).toList()}');
+
       if (mounted) {
         state = state.copyWith(
           isLoadingDebt: false,

@@ -60,12 +60,16 @@ class LoadingNotifier extends StateNotifier<bool> {
     stopLoading();
   }
 
-  Future<void> loadCustomerScreenData() async {
-    final repository = _ref.read(customerScreenDataRepositoryProvider);
+  Future<void> loadCustomerScreenData({bool loadFreshData = false}) async {
+    final lastAccessNotifier = _ref.read(lastAccessProvider.notifier);
     final cache = _ref.read(customerScreenDataCacheProvider.notifier);
     startLoading();
-    final data = await repository.fetchItemListAsMaps();
-    cache.set(data);
+    if (cache.data.isEmpty || lastAccessNotifier.hasOneDayPassed() || loadFreshData) {
+      final repository = _ref.read(customerScreenDataRepositoryProvider);
+      final data = await repository.fetchItemListAsMaps();
+      cache.set(data);
+      lastAccessNotifier.setLastAccessDate();
+    }
     stopLoading();
   }
 
@@ -106,12 +110,16 @@ class LoadingNotifier extends StateNotifier<bool> {
     stopLoading();
   }
 
-  Future<void> loadProductScreenData() async {
-    final repository = _ref.read(productScreenDataRepositoryProvider);
+  Future<void> loadProductScreenData({bool loadFreshData = false}) async {
+    final lastAccessNotifier = _ref.read(lastAccessProvider.notifier);
     final cache = _ref.read(productScreenDataCacheProvider.notifier);
     startLoading();
-    final data = await repository.fetchItemListAsMaps();
-    cache.set(data);
+    if (cache.data.isEmpty || lastAccessNotifier.hasOneDayPassed() || loadFreshData) {
+      final repository = _ref.read(productScreenDataRepositoryProvider);
+      final data = await repository.fetchItemListAsMaps();
+      cache.set(data);
+      lastAccessNotifier.setLastAccessDate();
+    }
     stopLoading();
   }
 
