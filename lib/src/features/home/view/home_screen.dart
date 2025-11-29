@@ -186,6 +186,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             GoRouter.of(context).pushNamed(routeName);
             if (routeName == AppRoute.items.name) {
               ref.read(dataLoadingController.notifier).loadProducts();
+              ref.read(dataLoadingController.notifier).loadProductStocks();
             }
           }
         } else if (context.mounted) {

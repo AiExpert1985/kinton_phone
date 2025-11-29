@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tablets/src/common/providers/last_access_provider.dart';
 import 'package:tablets/src/common/providers/salesman_info_provider.dart';
 import 'package:tablets/src/features/login/repository/accounts_repository.dart';
+import 'package:tablets/src/features/products/controllers/product_stock_cache_provider.dart';
+import 'package:tablets/src/features/products/repository/product_stock_repository_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/customer_db_cache_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/pending_transaction_db_cache_provider.dart';
 import 'package:tablets/src/features/transactions/controllers/products_db_cache_provider.dart';
@@ -93,20 +95,31 @@ class LoadingNotifier extends StateNotifier<bool> {
     stopLoading();
   }
 
+  Future<void> loadProductStocks() async {
+    final stockRepository = _ref.read(productStockRepositoryProvider);
+    final stockCache = _ref.read(productStockCacheProvider.notifier);
+    startLoading();
+    final stocks = await stockRepository.fetchItemListAsMaps();
+    stockCache.set(stocks);
+    stopLoading();
+  }
+
+// COMMENTED OUT: Transactions are now loaded on-demand per customer via selectedCustomerTransactionsStreamProvider
+// This reduces memory usage significantly as we don't load all 10,000+ transactions at once
 // we keep a copy of transaction data, because it is expensive in loading (about 1000 document)
 // which makes loading slow, and cost money in firebase, I update the cache once a day
 // loadingFreshData is used for refresh button, which salesman might need if the customer data where updated
 // during the day, because in our app, the data is only updated onces a day at the first app access
-  Future<void> loadTransactions({bool loadFreshData = false}) async {
-    if (_ref.read(transactionDbCacheProvider).isEmpty ||
-        _ref.read(lastAccessProvider.notifier).hasOneDayPassed() ||
-        loadFreshData) {
-      final transactions = await _ref.read(transactionRepositoryProvider).fetchItemListAsMaps();
-      _ref.read(transactionDbCacheProvider.notifier).set(transactions);
-      _ref.read(lastAccessProvider.notifier).setLastAccessDate();
-    }
-    stopLoading();
-  }
+  // Future<void> loadTransactions({bool loadFreshData = false}) async {
+  //   if (_ref.read(transactionDbCacheProvider).isEmpty ||
+  //       _ref.read(lastAccessProvider.notifier).hasOneDayPassed() ||
+  //       loadFreshData) {
+  //     final transactions = await _ref.read(transactionRepositoryProvider).fetchItemListAsMaps();
+  //     _ref.read(transactionDbCacheProvider.notifier).set(transactions);
+  //     _ref.read(lastAccessProvider.notifier).setLastAccessDate();
+  //   }
+  //   stopLoading();
+  // }
 }
 
 // LoadingWrapper widget with a dark background and spinner
